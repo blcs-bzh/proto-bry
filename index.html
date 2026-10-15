@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<script>window.PH_PUBLIC=true;</script>
+<script>window.PH_PUBLIC=true;window.PH_ENDPOINT="";</script>
 <script>(function(){var shown=0;function show(m){if(shown++>2)return;var d=document.createElement("div");d.setAttribute("role","alert");d.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:#d03b3b;color:#fff;font:600 12px/1.4 -apple-system,system-ui,sans-serif;padding:10px 12px;border-radius:10px;word-break:break-word";d.textContent="Diagnostic : "+m;(document.body||document.documentElement).appendChild(d);}
 window.addEventListener("error",function(e){show((e.message||"erreur")+" ("+String(e.filename||"").split("/").pop()+":"+e.lineno+")");});
 window.addEventListener("unhandledrejection",function(e){show("promesse : "+(e.reason&&e.reason.message||e.reason));});})();</script>
@@ -1776,8 +1776,19 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     finally{T.busy=false;if(T.again){T.again=false;if(T.queue.size)setTimeout(flush,400);}}
   }
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&T.queue.size){clearTimeout(T.timer);flush();}});
+  /* public build: sessions go to a Google Sheet through an Apps Script web app (window.PH_ENDPOINT) */
+  function publicUid(){let u=null;try{u=localStorage.getItem("ph_device_id");if(!u){u="dev_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.setItem("ph_device_id",u);}}catch(e){u="dev_"+Math.random().toString(36).slice(2,12);}return u;}
+  function sheetDb(ep){return {doc:()=>({
+    get:async()=>({exists:false,data:()=>null}),
+    set:async body=>{const txt=JSON.stringify({uid:T.uid,doc:body});
+      await fetch(ep,{method:"POST",mode:"no-cors",keepalive:txt.length<60000,headers:{"Content-Type":"text/plain;charset=utf-8"},body:txt});}})};}
   (async()=>{
     try{
+      if(window.PH_PUBLIC){
+        await new Promise(r=>setTimeout(r,0));   // let the rest of the page (dashboard included) finish loading first
+        if(window.PH_ENDPOINT){T.db=sheetDb(window.PH_ENDPOINT);T.uid=publicUid();T.status="ok";if(T.run){T.run.uid=T.uid;if(!DASH)markDirty(T.run,0);}}
+        else T.status="none";
+        if(DASH)Dash.boot();return;}
       const c=window.claude;if(!c||!c.use){T.status="none";if(DASH)Dash.boot();return;}
       const [db,user]=await Promise.all([c.use("db"),c.use("user")]);
       T.db=db;T.user=user;T.status=db?"ok":"none";
@@ -2673,6 +2684,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
   const Dash={runs:new Map(),local:new Map(),names:{},flowSel:null,theme:"all",flow:"all",denied:false,period:"all",jumps:false,example:false,sel:null,unsub:null,booted:false,tick:null,
     async boot(){
       if(this.booted){this.render();return;}this.booted=true;
+      if(window.PH_PUBLIC){return this.bootPublic();}
       if(window.claude&&window.claude.use){this.denied=!T.owner;if(this.denied){this.render();return;}}
       try{const all=JSON.parse(localStorage.getItem("ph_v2_runs")||"{}");Object.values(all).forEach(r=>{if(r&&r.id)this.local.set(r.id,r);});}catch(e){}
       if(T.db){
@@ -2685,6 +2697,22 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       }else this.live="local";
       this.tick=setInterval(()=>{if(DASH)this.render();},30000);
       this.render();
+    },
+    async bootPublic(){
+      try{const all=JSON.parse(localStorage.getItem("ph_v2_runs")||"{}");Object.values(all).forEach(r=>{if(r&&r.id)this.local.set(r.id,r);});}catch(e){}
+      if(!window.PH_ENDPOINT){this.live="local";this.render();return;}
+      let key="";try{key=localStorage.getItem("ph_dash_key")||"";}catch(e){}
+      if(!key){this.needKey=true;this.render();return;}
+      const ok=await this.pullPublic(key);
+      if(!ok){this.needKey=true;this.keyErr=true;this.render();return;}
+      this.needKey=false;this.tick=setInterval(()=>{if(DASH)this.pullPublic(key);},45000);this.render();
+    },
+    async pullPublic(key){
+      try{this.live="sync";const r=await fetch(window.PH_ENDPOINT+"?key="+encodeURIComponent(key),{cache:"no-store"});const j=await r.json();
+        if(!j||j.error)return false;
+        this.runs=new Map();(j.runs||[]).forEach(x=>{if(x&&x.id)this.runs.set(x.id,x);});
+        this.live="on";this.lastPull=Date.now();if(!this.needKey)this.render();return true;}
+      catch(e){this.live="err:réseau";if(!this.needKey)this.render();return !!this.runs.size;}
     },
     async resolveNames(){
       if(!T.user||!T.user.profiles)return;
@@ -2712,6 +2740,13 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     },
     render(){
       if(!DASH)return;
+      if(this.needKey){$("#dLive").hidden=true;$("#dash .d-filters").hidden=true;$("#dBanners").innerHTML="";
+        $("#dBody").innerHTML=`<div class="card d-locked"><h2>Tableau de bord des testeurs</h2><p class="muted-note">Saisissez la clé privée reçue avec le script Google pour voir les sessions.</p>
+          <form id="dKeyForm" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px"><input id="dKey" type="password" autocomplete="current-password" placeholder="Clé privée" style="min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--d-axis);background:var(--d-raised);color:var(--d-ink);font:inherit">
+          <button class="d-btn primary" type="submit">Ouvrir</button></form>${this.keyErr?'<p class="muted-note" style="color:var(--s-crit);margin-top:8px">Clé refusée ou script injoignable.</p>':""}</div>`;
+        $("#dKeyForm").onsubmit=async e=>{e.preventDefault();const k=$("#dKey").value.trim();if(!k)return;try{localStorage.setItem("ph_dash_key",k);}catch(x){}this.booted=false;this.keyErr=false;this.boot();};
+        return;}
+      $("#dLive").hidden=false;$("#dash .d-filters").hidden=false;
       if(this.denied){$("#dLive").hidden=true;$("#dash .d-filters").hidden=true;$("#dBanners").innerHTML="";$("#dBody").innerHTML=`<div class="card d-locked"><h2>Accès réservé</h2><p class="muted-note">Ce tableau de bord n'est visible que par le propriétaire du prototype.</p><button class="d-btn primary" id="dLockedBack">Ouvrir le prototype</button></div>`;$("#dLockedBack").onclick=()=>{location.hash="";};return;}
       const now=Date.now();
       // live status
