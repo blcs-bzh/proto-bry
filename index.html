@@ -1638,6 +1638,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       <span style="flex:1"></span>
       <button class="d-btn" id="dCopy"><svg><use href="#i-clip"/></svg>Copier les événements (CSV)</button>
       <button class="d-btn" id="dExample">Voir un exemple</button>
+      <button class="d-btn" id="dLogout" hidden>Se déconnecter</button>
       <button class="d-btn" id="dBack"><svg><use href="#i-phone"/></svg>Ouvrir le prototype</button>
     </div>
     <div id="dBanners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -2705,7 +2706,9 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       if(!key){this.needKey=true;this.render();return;}
       const ok=await this.pullPublic(key);
       if(!ok){this.needKey=true;this.keyErr=true;this.render();return;}
-      this.needKey=false;this.tick=setInterval(()=>{if(DASH)this.pullPublic(key);},45000);this.render();
+      this.needKey=false;$("#dLogout").hidden=false;
+      $("#dLogout").onclick=()=>{try{localStorage.removeItem("ph_dash_key");}catch(e){}clearInterval(this.tick);this.runs=new Map();this.booted=false;$("#dLogout").hidden=true;this.boot();};
+      this.tick=setInterval(()=>{if(DASH)this.pullPublic(key);},45000);this.render();
     },
     async pullPublic(key){
       try{this.live="sync";const r=await fetch(window.PH_ENDPOINT+"?key="+encodeURIComponent(key),{cache:"no-store"});const j=await r.json();
@@ -2741,9 +2744,9 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     render(){
       if(!DASH)return;
       if(this.needKey){$("#dLive").hidden=true;$("#dash .d-filters").hidden=true;$("#dBanners").innerHTML="";
-        $("#dBody").innerHTML=`<div class="card d-locked"><h2>Tableau de bord des testeurs</h2><p class="muted-note">Saisissez la clé privée reçue avec le script Google pour voir les sessions.</p>
-          <form id="dKeyForm" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px"><input id="dKey" type="password" autocomplete="current-password" placeholder="Clé privée" style="min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--d-axis);background:var(--d-raised);color:var(--d-ink);font:inherit">
-          <button class="d-btn primary" type="submit">Ouvrir</button></form>${this.keyErr?'<p class="muted-note" style="color:var(--s-crit);margin-top:8px">Clé refusée ou script injoignable.</p>':""}</div>`;
+        $("#dBody").innerHTML=`<div class="card d-locked"><h2>Tableau de bord des testeurs</h2><p class="muted-note">Accès réservé : saisissez le mot de passe pour voir les sessions.</p>
+          <form id="dKeyForm" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px"><input id="dKey" type="password" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe" style="min-width:220px;padding:10px 12px;border-radius:10px;border:1px solid var(--d-axis);background:var(--d-raised);color:var(--d-ink);font:inherit">
+          <button class="d-btn primary" type="submit">Ouvrir</button></form>${this.keyErr?'<p class="muted-note" style="color:var(--s-crit);margin-top:8px">Mot de passe incorrect, ou script Google injoignable.</p>':""}</div>`;
         $("#dKeyForm").onsubmit=async e=>{e.preventDefault();const k=$("#dKey").value.trim();if(!k)return;try{localStorage.setItem("ph_dash_key",k);}catch(x){}this.booted=false;this.keyErr=false;this.boot();};
         return;}
       $("#dLive").hidden=false;$("#dash .d-filters").hidden=false;
