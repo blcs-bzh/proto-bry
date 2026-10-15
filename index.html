@@ -1628,6 +1628,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
         <button aria-pressed="false" data-f="p0">Paiement 0 €</button>
         <button aria-pressed="false" data-f="pb">Paiement bloqué</button>
       </div>
+      <div class="seg" id="dSrc" aria-label="Origine"><button aria-pressed="true" data-s="all">Tous les liens</button><button aria-pressed="false" data-s="github">Liens publics (QR)</button><button aria-pressed="false" data-s="claude">Claude</button></div>
       <div class="seg" id="dTheme" aria-label="Thème"><button aria-pressed="true" data-t="all">Thèmes</button><button aria-pressed="false" data-t="light">Clair</button><button aria-pressed="false" data-t="dark">Sombre</button></div>
       <div class="seg" id="dPeriod">
         <button aria-pressed="false" data-p="today">Aujourd'hui</button>
@@ -1725,8 +1726,9 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
   let DASH=(location.hash||"").slice(1)==="dashboard";
   const MILESTONES=new Set(["phone_submitted","otp_validated","profile_submitted","battery_taken","return_confirmed","restart"]);
   function rid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  function phEntry(){if(window.__phEntry==null){const h=decodeURIComponent((location.hash||"").slice(1));window.__phEntry=(h&&h!=="dashboard")?h.slice(0,60):"accueil";}return window.__phEntry;}
   function newRun(jump){
-    T.run={id:rid(),proto:"v2",brand:(typeof BR!=="undefined"&&BR.cur)?slugify(BR.cur.name):null,flow:(typeof state!=="undefined"&&state.flow)||"v2",theme:document.documentElement.classList.contains("theme-light")?"light":"dark",startedAt:Date.now(),updatedAt:Date.now(),uid:T.uid,status:"in_progress",menuJump:!!jump,lang:(typeof LANG!=="undefined"?LANG:"fr"),
+    T.run={id:rid(),proto:"v2",brand:(typeof BR!=="undefined"&&BR.cur)?slugify(BR.cur.name):null,flow:(typeof state!=="undefined"&&state.flow)||"v2",theme:document.documentElement.classList.contains("theme-light")?"light":"dark",startedAt:Date.now(),updatedAt:Date.now(),uid:T.uid,status:"in_progress",menuJump:!!jump,src:(window.PH_PUBLIC?"github":"claude"),entry:phEntry(),lang:(typeof LANG!=="undefined"?LANG:"fr"),
       device:{w:innerWidth,h:innerHeight,touch:!!(window.matchMedia&&matchMedia("(pointer:coarse)").matches)},events:[]};
     T.battDone=false;
   }
@@ -1767,7 +1769,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       ids.slice(15).forEach(i=>delete T.mine[i]);ids=ids.slice(0,15);
       let body={uid:T.uid,updatedAt:Date.now(),runs:T.mine};
       while(JSON.stringify(body).length>240000&&ids.length>1){delete T.mine[ids.pop()];body.runs=T.mine;}
-      try{await T.db.doc("runs/"+T.uid).set(body);T.status="ok";}
+      try{await T.db.doc("runs/"+T.uid).set(body);T.status="ok";if(!window.PH_PUBLIC&&SHEET_EP)mirrorSheet(body);}
       catch(e){
         const c=e&&e.code;T.status=c||"error";
         if(c==="unavailable"||c==="resource_exhausted"){batch.forEach(r=>T.queue.set(r.id,r));setTimeout(flush,2500+Math.random()*1500);}
@@ -1779,6 +1781,8 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&T.queue.size){clearTimeout(T.timer);flush();}});
   /* public build: sessions go to a Google Sheet through an Apps Script web app (window.PH_ENDPOINT) */
   function publicUid(){let u=null;try{u=localStorage.getItem("ph_device_id");if(!u){u="dev_"+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);localStorage.setItem("ph_device_id",u);}}catch(e){u="dev_"+Math.random().toString(36).slice(2,12);}return u;}
+  const SHEET_EP="{{ENDPOINT}}".indexOf("{{")===0?"":"{{ENDPOINT}}";
+  function mirrorSheet(body){try{const txt=JSON.stringify({uid:T.uid,doc:body});fetch(SHEET_EP,{method:"POST",mode:"no-cors",keepalive:txt.length<60000,headers:{"Content-Type":"text/plain;charset=utf-8"},body:txt}).catch(()=>{});}catch(e){}}
   function sheetDb(ep){return {doc:()=>({
     get:async()=>({exists:false,data:()=>null}),
     set:async body=>{const txt=JSON.stringify({uid:T.uid,doc:body});
@@ -1787,7 +1791,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     try{
       if(window.PH_PUBLIC){
         await new Promise(r=>setTimeout(r,0));   // let the rest of the page (dashboard included) finish loading first
-        if(window.PH_ENDPOINT){T.db=sheetDb(window.PH_ENDPOINT);T.uid=publicUid();T.status="ok";if(T.run){T.run.uid=T.uid;if(!DASH)markDirty(T.run,0);}}
+        if(window.PH_ENDPOINT||SHEET_EP){T.db=sheetDb(window.PH_ENDPOINT||SHEET_EP);T.uid=publicUid();T.status="ok";if(T.run){T.run.uid=T.uid;if(!DASH)markDirty(T.run,0);}}
         else T.status="none";
         if(DASH)Dash.boot();return;}
       const c=window.claude;if(!c||!c.use){T.status="none";if(DASH)Dash.boot();return;}
@@ -2682,7 +2686,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       last:views.length?views[views.length-1].p.s:null,errors:ev.filter(e=>e.e==="form_error").length,
       rating:ratingEv&&ratingEv.p?ratingEv.p.v:null,span:ev.length?ev[ev.length-1].t:0};
   }
-  const Dash={runs:new Map(),local:new Map(),names:{},flowSel:null,theme:"all",flow:"all",denied:false,period:"all",jumps:false,example:false,sel:null,unsub:null,booted:false,tick:null,
+  const Dash={src:"all",runs:new Map(),local:new Map(),names:{},flowSel:null,theme:"all",flow:"all",denied:false,period:"all",jumps:false,example:false,sel:null,unsub:null,booted:false,tick:null,
     async boot(){
       if(this.booted){this.render();return;}this.booted=true;
       if(window.PH_PUBLIC){return this.bootPublic();}
@@ -2701,7 +2705,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     },
     async bootPublic(){
       try{const all=JSON.parse(localStorage.getItem("ph_v2_runs")||"{}");Object.values(all).forEach(r=>{if(r&&r.id)this.local.set(r.id,r);});}catch(e){}
-      if(!window.PH_ENDPOINT){this.live="local";this.render();return;}
+      const EP=window.PH_ENDPOINT||SHEET_EP;if(!EP){this.live="local";this.render();return;}
       let key="";try{key=localStorage.getItem("ph_dash_key")||"";}catch(e){}
       if(!key){this.needKey=true;this.render();return;}
       const ok=await this.pullPublic(key);
@@ -2711,7 +2715,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       this.tick=setInterval(()=>{if(DASH)this.pullPublic(key);},45000);this.render();
     },
     async pullPublic(key){
-      try{this.live="sync";const r=await fetch(window.PH_ENDPOINT+"?key="+encodeURIComponent(key),{cache:"no-store"});const j=await r.json();
+      try{this.live="sync";const r=await fetch((window.PH_ENDPOINT||SHEET_EP)+"?key="+encodeURIComponent(key),{cache:"no-store"});const j=await r.json();
         if(!j||j.error)return false;
         this.runs=new Map();(j.runs||[]).forEach(x=>{if(x&&x.id)this.runs.set(x.id,x);});
         this.live="on";this.lastPull=Date.now();if(!this.needKey)this.render();return true;}
@@ -2735,6 +2739,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
         if(!r.device||!r.device.w)return false;
         if(!this.jumps&&r.menuJump)return false;
         if(this.flow!=="all"&&(r.flow||"v2")!==this.flow)return false;
+        if(this.src!=="all"&&(r.src||"claude")!==this.src)return false;
         if(this.theme!=="all"&&(r.theme||"dark")!==this.theme)return false;
         if(this.period==="today"&&r.startedAt<start.getTime())return false;
         if(this.period==="7d"&&r.startedAt<now-7*864e5)return false;
@@ -2756,7 +2761,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       const lv=$("#dLive");const st=this.example?"example":(this.live||"local");
       lv.className="d-live "+(st==="on"?"on":"off");
       lv.lastElementChild.textContent=st==="on"?"En direct":st==="example"?"Données d'exemple":st==="local"?"Cet appareil uniquement":"Connexion interrompue";
-      $$("#dPeriod button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.p===this.period)));$$("#dFlow button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===this.flow)));
+      $$("#dPeriod button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.p===this.period)));$$("#dFlow button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f===this.flow)));$$("#dSrc button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===this.src)));
       $("#dJumps").checked=this.jumps;$("#dExample").textContent=this.example?"Revenir aux vraies données":"Voir un exemple";
       // banners
       let ban="";
@@ -2766,7 +2771,7 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       $("#dBanners").innerHTML=ban;
       const runs=this.filtered();const D=runs.map(r=>derive(r,now));
       if(!D.length){$("#dBody").innerHTML=emptyState(this.all().length>0);return;}
-      $("#dBody").innerHTML=summary(D)+compareFlows(this)+funnelAndTime(D)+flowSection(D,this)+sessions(D,this)+tagsAndMore(D);
+      $("#dBody").innerHTML=summary(D)+compareFlows(this)+entriesCard(D)+funnelAndTime(D)+flowSection(D,this)+sessions(D,this)+tagsAndMore(D);
       bindTips();drawHeat(this._heat||[]);
     }
   };
@@ -2945,6 +2950,21 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     ev.filter(e=>e.e==="screen_view").forEach(v=>{const hot=RF_HOT[v.p.s];if(!hot)return;hot.forEach(([l,x,y,w])=>{let n=Math.floor(w+rnd());while(n-->0)out.push([v.p.s,+(x+(rnd()-.5)*.12).toFixed(3),+(y+(rnd()-.5)*.04).toFixed(3),l,v.t+500,0]);});});
     return out;}
 
+  /* ---------- sessions per test link ---------- */
+  const ENTRY_NAME={standard:"Standard",paiement0:"Paiement 0 €",paiementbloque:"Paiement bloqué",accueil:"Lien sans parcours"};
+  function entryLabel(r){const src=(r.src||"claude")==="github"?"Lien public":"Claude";let e=r.entry||"";
+    if(!e)return src;const m=e.match(/^b-([a-z0-9_]{1,24})-[0-9a-f]{6}(?:--([a-z0-9]+))?$/i);
+    if(m)return src+" · Marque "+m[1].replace(/_/g," ")+" · "+(ENTRY_NAME[m[2]||"standard"]||m[2]);
+    return src+" · "+(ENTRY_NAME[e]||("#"+e));}
+  function entriesCard(D){
+    if(!D.length)return "";
+    const g=new Map();D.forEach(d=>{const k=entryLabel(d.r);if(!g.has(k))g.set(k,[]);g.get(k).push(d);});
+    const rows=[...g.entries()].sort((a,b)=>b[1].length-a[1].length).map(([k,arr])=>{const comp=arr.filter(d=>d.completed);const med=median(comp.map(d=>d.total).filter(x=>x!=null));
+      const last=Math.max(...arr.map(d=>d.r.updatedAt||d.r.startedAt||0));
+      return `<tr><td>${esc(k)}</td><td class="num">${arr.length}</td><td class="num">${Math.round(comp.length/arr.length*100)} %</td><td class="num">${fmtDur(med)}</td><td class="num">${last?esc(fmtWhen(last)):"–"}</td></tr>`;}).join("");
+    return `<section class="card"><div class="card-h"><div><h2>Sessions par lien de test</h2><p class="cap">Chaque session retient le lien par lequel le testeur est arrivé (QR code public, lien de marque partenaire ou version Claude).</p></div></div>
+      <div class="tbl-wrap"><table class="d-tbl"><thead><tr><th>Lien d'entrée</th><th class="num">Sessions</th><th class="num">Complétion</th><th class="num">Temps médian</th><th class="num">Dernière activité</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  }
   function pill(d){
     if(d.status==="completed")return `<span class="pill st-good"><i>✓</i>Complété</span>`;
     if(d.status==="live")return `<span class="pill st-live"><i></i>En cours</span>`;
@@ -2954,13 +2974,13 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     if(!ctx.sel||!D.find(d=>d.r.id===ctx.sel))ctx.sel=D[0].r.id;
     const rows=D.slice(0,60).map(d=>`<tr class="click${d.r.id===ctx.sel?" sel":""}" data-run="${esc(d.r.id)}" tabindex="0">
       <td><b>${esc(ctx.who(d.r))}</b>${d.r.menuJump?` <span class="pill jump">menu</span>`:""}</td>
-      <td><span class="flow-chip">${esc((FLOWS[d.r.flow||"v2"]||FLOWS.v2).label)}</span></td><td>${(d.r.theme||"dark")==="light"?"Clair":"Sombre"} · ${(d.r.lang||"fr")==="es"?"🇪🇸 ES":"🇫🇷 FR"}</td><td>${esc(fmtWhen(d.r.startedAt))}</td><td>${d.r.device&&d.r.device.touch?"Mobile":"Ordinateur"}</td>
+      <td>${esc(entryLabel(d.r))}</td><td><span class="flow-chip">${esc((FLOWS[d.r.flow||"v2"]||FLOWS.v2).label)}</span></td><td>${(d.r.theme||"dark")==="light"?"Clair":"Sombre"} · ${(d.r.lang||"fr")==="es"?"🇪🇸 ES":"🇫🇷 FR"}</td><td>${esc(fmtWhen(d.r.startedAt))}</td><td>${d.r.device&&d.r.device.touch?"Mobile":"Ordinateur"}</td>
       <td>${pill(d)}</td><td class="num">${d.completed?fmtDur(d.total):fmtDur(d.span)}</td>
       <td>${esc(SCREEN_NAME[d.last]||"–")}</td></tr>`).join("");
     const sel=D.find(d=>d.r.id===ctx.sel);
     return `<section class="grid-sess">
       <div class="card"><div class="card-h"><div><h2>Sessions</h2><p class="cap">Cliquez sur une session pour voir son parcours${D.length>60?" · 60 plus récentes":""}</p></div></div>
-      <div class="tbl-wrap"><table class="d-tbl"><thead><tr><th>Testeur</th><th>Parcours</th><th>Thème</th><th>Début</th><th>Appareil</th><th>Statut</th><th class="num">Durée</th><th>Dernier écran</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+      <div class="tbl-wrap"><table class="d-tbl"><thead><tr><th>Testeur</th><th>Lien d'entrée</th><th>Parcours</th><th>Thème</th><th>Début</th><th>Appareil</th><th>Statut</th><th class="num">Durée</th><th>Dernier écran</th></tr></thead><tbody>${rows}</tbody></table></div></div>
       <div class="card" aria-live="polite">${detail(sel,ctx)}</div>
     </section>`;
   }
@@ -3099,10 +3119,11 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
       if(v===5&&rnd()<.5)add("google_review_click",null,3000);if(v<=3)add("feedback_sent",{issues:["Temps d'attente"],text:true},20000);
       out.push({id:"ex"+k,theme:k%2?"light":"dark",flow:["v2","p0","pb"][k%3],who:names[k%12],startedAt:start,updatedAt:start+t,status:"completed",menuJump:false,device:{touch:k%5!==0,w:k%5?390:1440,h:k%5?844:900},events:ev,rating:v});
     }
-    out.forEach((r,i)=>{r.taps=sampleTaps(r.events,7+i*131);});return out;
+    out.forEach((r,i)=>{r.taps=sampleTaps(r.events,7+i*131);r.src=i%3?"github":"claude";r.entry=r.src==="github"?({v2:"standard",p0:"paiement0",pb:"paiementbloque"}[r.flow]||"standard"):(i%2?"b-fitness_park-2bd49c":"standard");});return out;
   }
   // dashboard controls
   $("#dTheme").addEventListener("click",e=>{const b=e.target.closest("button");if(b){Dash.theme=b.dataset.t;Dash.sel=null;$$("#dTheme button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));Dash.render();}});
+  $("#dSrc").addEventListener("click",e=>{const b=e.target.closest("button");if(b){Dash.src=b.dataset.s;Dash.sel=null;Dash.render();}});
   $("#dFlow").addEventListener("click",e=>{const b=e.target.closest("button");if(b){Dash.flow=b.dataset.f;Dash.sel=null;Dash.render();}});
   $("#dPeriod").addEventListener("click",e=>{const b=e.target.closest("button");if(b){Dash.period=b.dataset.p;Dash.render();}});
   $("#dJumps").addEventListener("change",e=>{Dash.jumps=e.target.checked;Dash.render();});
@@ -3113,8 +3134,8 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
   document.addEventListener("keydown",e=>{const fn=e.target.closest&&e.target.closest("#dBody [data-fnode]");if(fn&&(e.key==="Enter"||e.key===" ")){e.preventDefault();Dash.flowSel=fn.dataset.fnode;Dash.render();return;}const tr=e.target.closest&&e.target.closest("#dBody tr[data-run]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();Dash.sel=tr.dataset.run;Dash.render();}});
   $("#dBack").addEventListener("click",()=>{location.hash="";});
   $("#dCopy").addEventListener("click",()=>{
-    const lines=["run_id,parcours,testeur,debut_iso,statut,evenement,t_ms,parametres"];
-    Dash.filtered().forEach(r=>{const d=derive(r,Date.now());(r.events||[]).forEach(e=>lines.push([r.id,r.flow||"v2",Dash.who(r),new Date(r.startedAt).toISOString(),d.status,e.e,e.t,e.p?JSON.stringify(e.p):""].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")));});
+    const lines=["run_id,lien_entree,parcours,testeur,debut_iso,statut,evenement,t_ms,parametres"];
+    Dash.filtered().forEach(r=>{const d=derive(r,Date.now());(r.events||[]).forEach(e=>lines.push([r.id,entryLabel(r),r.flow||"v2",Dash.who(r),new Date(r.startedAt).toISOString(),d.status,e.e,e.t,e.p?JSON.stringify(e.p):""].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")));});
     const txt=lines.join("\n");
     const done=()=>toastDash(`${lines.length-1} événements copiés`);
     try{navigator.clipboard.writeText(txt).then(done,()=>fallbackCopy(txt,done));}catch(e){fallbackCopy(txt,done);}
