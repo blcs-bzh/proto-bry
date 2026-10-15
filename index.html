@@ -13,6 +13,9 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <script>window.PH_PUBLIC=true;</script>
+<script>(function(){var shown=0;function show(m){if(shown++>2)return;var d=document.createElement("div");d.setAttribute("role","alert");d.style.cssText="position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:#d03b3b;color:#fff;font:600 12px/1.4 -apple-system,system-ui,sans-serif;padding:10px 12px;border-radius:10px;word-break:break-word";d.textContent="Diagnostic : "+m;(document.body||document.documentElement).appendChild(d);}
+window.addEventListener("error",function(e){show((e.message||"erreur")+" ("+String(e.filename||"").split("/").pop()+":"+e.lineno+")");});
+window.addEventListener("unhandledrejection",function(e){show("promesse : "+(e.reason&&e.reason.message||e.reason));});})();</script>
 <title>Plug'Heur</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Oswald:wght@500;600;700&display=swap">
