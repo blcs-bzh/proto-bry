@@ -1,3 +1,10 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#141414">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Plug'Heur Prototype 2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Oswald:wght@500;600;700&display=swap">
@@ -36,6 +43,9 @@
 }
 [hidden]{display:none!important}
 html,body{height:100%}
+@supports (height:100dvh){html,body{height:100dvh}}
+body{margin:0;overscroll-behavior:none}
+@media (max-width:639px){input,select,textarea{font-size:16px!important}}
 body{background:var(--stage);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
 *{box-sizing:border-box}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
@@ -3065,3 +3075,5 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
   }
 })();
 </script>
+
+</html>
