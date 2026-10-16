@@ -2364,9 +2364,8 @@ body.dash-mode .stage,body.dash-mode .proto-btn,body.dash-mode .proto-menu{displ
     const recent=u.days<=RECENT_DAYS;
     track(u.by==="phone"?"phone_recognized":"email_recognized",{recent,days:u.days,src:u.src});
     if(matchesAccount(u,state.email)){
-      state.email=u.email;state.consentMk=!!u.mk;state.consentPrivacy=true;
-      track("identity_matched",{days:u.days,src:u.src});track("login_without_code");track("profile_skipped",{reason:"match"});
-      rememberUser(state.email,u.first);go(FLOWS[state.flow].next);return;}
+      track("identity_matched",{days:u.days,src:u.src});
+      openConfirm(u);$("#ciEmail").value=state.email;return;}
     if(recent)openConfirm(u);else go("otp");
   }
   function openConfirm(u){
