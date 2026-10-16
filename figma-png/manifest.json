@@ -1,0 +1,182 @@
+[
+{
+"flow": "1 Standard",
+"name": "1-01 Chargement",
+"file": "1-01-Chargement.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-02 Téléphone + email",
+"file": "1-02-Telephone-email.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-03 Code de vérification",
+"file": "1-03-Code-de-verification.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-04 Méthode de vérification",
+"file": "1-04-Methode-de-verification.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-05 Confirmer votre identité",
+"file": "1-05-Confirmer-votre-identite.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-06 Nouvel email",
+"file": "1-06-Nouvel-email.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-07 Compléter votre profil",
+"file": "1-07-Completer-votre-profil.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-08 Gratuit sous conditions",
+"file": "1-08-Gratuit-sous-conditions.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-09 Préparation batterie",
+"file": "1-09-Preparation-batterie.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-10 Batterie disponible",
+"file": "1-10-Batterie-disponible.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-11 Session active",
+"file": "1-11-Session-active.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-12 Photo de la station",
+"file": "1-12-Photo-de-la-station.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-13 Retour confirmé + note",
+"file": "1-13-Retour-confirme-note.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-14 Assistance (chat)",
+"file": "1-14-Assistance-chat.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-15 Échange - remettre la batterie",
+"file": "1-15-Echange-remettre-la-batterie.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-16 Échange - éjecter une nouvelle",
+"file": "1-16-Echange-ejecter-une-nouvelle.png"
+},
+{
+"flow": "1 Standard",
+"name": "1-17 Erreur",
+"file": "1-17-Erreur.png"
+},
+{
+"flow": "2 Paiement 0 €",
+"name": "2-01 Caution 0 € + carte",
+"file": "2-01-Caution-0-carte.png"
+},
+{
+"flow": "2 Paiement 0 €",
+"name": "2-02 Erreur carte",
+"file": "2-02-Erreur-carte.png"
+},
+{
+"flow": "3 Paiement bloqué",
+"name": "3-01 Caution bloquée 49 €",
+"file": "3-01-Caution-bloquee-49.png"
+},
+{
+"flow": "3 Paiement bloqué",
+"name": "3-02 Paiement Revolut",
+"file": "3-02-Paiement-Revolut.png"
+},
+{
+"flow": "4 Location payante",
+"name": "4-01 Téléphone + conditions",
+"file": "4-01-Telephone-conditions.png"
+},
+{
+"flow": "4 Location payante",
+"name": "4-02 Ce que vous payez",
+"file": "4-02-Ce-que-vous-payez.png"
+},
+{
+"flow": "4 Location payante",
+"name": "4-03 Paiement",
+"file": "4-03-Paiement.png"
+},
+{
+"flow": "4 Location payante",
+"name": "4-04 Session active (facturation)",
+"file": "4-04-Session-active-facturation.png"
+},
+{
+"flow": "4 Location payante",
+"name": "4-05 Batterie rendue + reçu",
+"file": "4-05-Batterie-rendue-recu.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-01 Photo requise",
+"file": "P-01-Photo-requise.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-02 Rallumer la batterie",
+"file": "P-02-Rallumer-la-batterie.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-03 Aide",
+"file": "P-03-Aide.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-04 Retour de batterie (étapes)",
+"file": "P-04-Retour-de-batterie-etapes.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-05 Classement",
+"file": "P-05-Classement.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-06 Débloquer des offres",
+"file": "P-06-Debloquer-des-offres.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-07 Préférences",
+"file": "P-07-Preferences.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-08 Langue",
+"file": "P-08-Langue.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-09 Indicatif pays",
+"file": "P-09-Indicatif-pays.png"
+},
+{
+"flow": "5 Pop-ups",
+"name": "P-10 Question du jour",
+"file": "P-10-Question-du-jour.png"
+}
+]
