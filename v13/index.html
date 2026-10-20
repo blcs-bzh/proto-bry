@@ -807,6 +807,11 @@ button.cc svg{width:12px;height:12px;transform:rotate(90deg);opacity:.7}
 a.s-btn{text-decoration:none;color:inherit}
 .stage.app-only .studio,.stage.app-only .fac{display:none!important}
 @media (min-width:900px){.stage.app-only{display:flex}.stage.app-only .phone-wrap{flex:1;height:100dvh}}
+/* V13.8 · logo plate (keeps an imported logo visible on any background) */
+.plogo.plate img{background:var(--plate,#fff);padding:10px 16px;border-radius:16px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.22))}
+.plogo.sm.plate img{padding:5px 10px;border-radius:10px}
+.s-qr.dense canvas{width:100%;max-width:340px;height:auto}
+.s-qr.dense{align-self:stretch;display:grid;place-items:center}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
@@ -906,7 +911,9 @@ a.s-btn{text-decoration:none;color:inherit}
     <div class="s-f"><label for="sPlace">Lieu de la station</label><input class="s-in" id="sPlace" maxlength="40" autocomplete="off"></div>
     <div class="s-f"><span class="s-l">Logo</span>
       <div class="s-btns" style="align-items:center"><label class="s-btn s-file">Importer un logo<input type="file" id="sLogo" accept="image/png,image/svg+xml,image/webp,image/jpeg"></label><button class="s-btn" id="sLogoDel" hidden>Retirer</button><img class="s-logo-prev" id="sLogoPrev" alt="" hidden></div>
-      <p class="s-hint">PNG ou SVG blanc, fond transparent. Sans logo, le nom s'affiche.</p></div>
+      <div class="s-f" id="sPlateF" hidden><span class="s-l">Fond du logo</span><div class="s-seg" id="sPlate"><button data-v="auto">Auto</button><button data-v="on">Plaque</button><button data-v="off">Aucun</button></div>
+        <p class="s-hint">Auto : une plaque claire (ou foncée) est ajoutée si le logo se confond avec le fond de l'app.</p></div>
+      <p class="s-hint">PNG ou SVG, fond transparent de préférence. Le logo s'affiche sur tous les écrans et voyage dans le lien de l'app. Sans logo, le nom s'affiche.</p></div>
     <div class="s-f"><span class="s-l">Fond</span><div class="s-seg" id="sBg"><button data-v="none">Motif capsules</button><button data-v="photo">Photo importée</button></div>
       <label class="s-btn s-file" style="align-self:flex-start">Importer une photo<input type="file" id="sPhotoUp" accept="image/*"></label>
       <p class="s-hint">Haut de l'accueil, bandeau sur les écrans de saisie, fond teinté pendant la session.</p></div>
@@ -2645,7 +2652,10 @@ const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){ret
 /* V13.7 · app link: ?c=<base64url JSON> carries the Studio config */
 const b64e=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 const b64d=t=>{t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";return JSON.parse(decodeURIComponent(escape(atob(t))));};
-const LINK=(()=>{try{const q=new URLSearchParams(location.search),c=q.get("c");if(!c)return null;const o=b64d(c);return o&&typeof o==="object"?{o,studio:q.has("studio")}:null;}catch(e){return null;}})();
+const LINK=(()=>{try{const q=new URLSearchParams(location.search),c=q.get("c");if(!c)return null;const o=b64d(c);if(!o||typeof o!=="object")return null;
+  const l=q.get("l");let logo=null,lz=null;if(l&&/^[wpj]\.[A-Za-z0-9_-]+$/.test(l))logo="data:image/"+({w:"webp",p:"png",j:"jpeg"})[l[0]]+";base64,"+l.slice(2).replace(/-/g,"+").replace(/_/g,"/");
+  else if(l&&/^z\.[A-Za-z0-9_-]+$/.test(l))lz=l.slice(2);
+  return {o,logo,lz,studio:q.has("studio")};}catch(e){return null;}})();
 const CFGKEY=LINK?"ph13_app":"ph13_cfg";
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -2741,9 +2751,9 @@ const PRESETS={
   energie:{label:"Énergie",primary:"#e30613",secondary:"#111111",mode:"light"},
   ocean:{label:"Océan",primary:"#1c69d4",secondary:"#00a3e0",mode:"dark"},
   soleil:{label:"Soleil",primary:"#ffc400",secondary:"#7b3fe4",mode:"light"}};
-const BASE={name:"Fitness Park",place:"Fitness Park Le Bouscat",headline:"Rechargez votre batterie gratuitement.",bye:"Merci pour votre avis !",bg:"none",custom:null,logo:null};
+const BASE={name:"Fitness Park",place:"Fitness Park Le Bouscat",headline:"Rechargez votre batterie gratuitement.",bye:"Merci pour votre avis !",bg:"none",custom:null,logo:null,logoTone:null,logoPlate:"auto"};
 const fresh=()=>JSON.parse(JSON.stringify({...BASE,...PRESETS.plugheur,preset:"plugheur",offers:OFFERS.map(o=>o[0]),features:allOn()}));
-let cfg=LINK?(({flow,lang,...o})=>({...fresh(),...o}))(LINK.o):store.get(CFGKEY);
+let cfg=LINK?(({flow,lang,logo,custom,...o})=>({...fresh(),...o,logo:LINK.logo}))(LINK.o):store.get(CFGKEY);
 if(!cfg||!hexOk(cfg.primary)||!hexOk(cfg.secondary))cfg=fresh();else cfg={...fresh(),...cfg};
 cfg.features={...allOn(),...(cfg.features||{})};if(!Array.isArray(cfg.offers)||cfg.offers.length!==OFFERS.length)cfg.offers=OFFERS.map(o=>o[0]);
 
@@ -2769,7 +2779,9 @@ function apply(){
   const white=cfg.battery?cfg.battery==="white":dark;$$("[data-prod]").forEach(i=>{i.src=A[i.dataset.prod+(white?"D":"L")];});
   $$(".tmode").forEach(b=>{b.innerHTML=dark?'<svg aria-hidden="true"><use href="#i-sun"/></svg>':'<svg aria-hidden="true"><use href="#i-moon"/></svg>';b.setAttribute("aria-label",tr(dark?"Passer en mode clair":"Passer en mode sombre"));});
   $$(".langb").forEach(b=>{b.innerHTML=`<svg aria-hidden="true"><use href="#i-globe"/></svg>${LANG.toUpperCase()}`;b.setAttribute("aria-label",LANG==="es"?"Idioma: español":"Langue : français");});
-  $$("[data-plogo]").forEach(p=>{p.innerHTML=cfg.logo?`<img src="${cfg.logo}" alt="${esc(cfg.name)}">`:`<b>${esc(cfg.name)}</b>`;p.classList.toggle("has-logo",!!cfg.logo);});
+  const onDark=dark||!!ph,tone=cfg.logoTone,plate=!!cfg.logo&&(cfg.logoPlate==="on"||(cfg.logoPlate!=="off"&&((tone==="dark"&&onDark)||(tone==="light"&&!onDark))));
+  app.style.setProperty("--plate",tone==="light"?"#121615":"#ffffff");
+  $$("[data-plogo]").forEach(p=>{p.innerHTML=cfg.logo?`<img src="${cfg.logo}" alt="${esc(cfg.name)}">`:`<b>${esc(cfg.name)}</b>`;p.classList.toggle("has-logo",!!cfg.logo);p.classList.toggle("plate",plate);});
   $$('[data-copy="followT"]').forEach(e=>e.textContent=`Suivez ${cfg.name}`);
   $$('[data-copy="headline"]').forEach(e=>{e.textContent=cfg.headline;e.__fr=null;});
   $$('[data-copy="bye"]').forEach(e=>{e.textContent=cfg.bye;});
@@ -3210,7 +3222,8 @@ function syncStudio(){
   $$("#sBatt button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===cfg.battery)));
   $$("#sBg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(photoUrl()?"photo":"none"))));
   $$("#sLang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===LANG)));
-  $("#sLogoPrev").hidden=$("#sLogoDel").hidden=!cfg.logo;if(cfg.logo)$("#sLogoPrev").src=cfg.logo;
+  $("#sLogoPrev").hidden=$("#sLogoDel").hidden=!cfg.logo;if(cfg.logo)$("#sLogoPrev").src=cfg.logo;$("#sPlateF").hidden=!cfg.logo;
+  $$("#sPlate button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(cfg.logoPlate||"auto"))));
   $("#sOffers").innerHTML=cfg.offers.map((o,i)=>`<input class="s-in" data-o="${i}" maxlength="40" value="${esc(o)}" aria-label="Titre de l'offre ${i+1}">`).join("");
   $$("#sFeat input").forEach(i=>i.checked=!!cfg.features[i.dataset.f]);markErr();
   const T=TK;$("#sTokens").innerHTML=[["Fond",T.bg],["Surface",T.surface],["Texte",T.fg],["Principale",T.primary],["Accent",T.ptext],["Secondaire",T.sec]].map(([l,c])=>`<div><i style="background:${c}"></i><span>${l}</span></div>`).join("");
@@ -3246,8 +3259,12 @@ $("#sBg").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(!
 $("#sLang").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)setLang(b.dataset.v);});
 $("#sFeat").addEventListener("change",e=>{const i=e.target.closest("[data-f]");if(!i)return;cfg.features[i.dataset.f]=i.checked;apply();syncStudio();});
 function readImg(file,max,cb,type){if(!file)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,max[0]/im.width,max[1]/im.height),cv=document.createElement("canvas");cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);cb(cv.toDataURL(type,.86));};im.onerror=()=>toast("Image illisible : utilisez un PNG, JPG ou SVG");im.src=rd.result;};rd.readAsDataURL(file);}
-$("#sLogo").addEventListener("change",e=>readImg(e.target.files[0],[360,120],u=>update(()=>cfg.logo=u,true),"image/png"));
-$("#sLogoDel").addEventListener("click",()=>update(()=>cfg.logo=null,true));
+function logoTone(url,cb){const im=new Image();im.onload=()=>{const w=Math.min(120,im.width),h=Math.max(1,Math.round(im.height*w/im.width)),cv=document.createElement("canvas");cv.width=w;cv.height=h;const x=cv.getContext("2d");x.drawImage(im,0,0,w,h);
+  let d;try{d=x.getImageData(0,0,w,h).data;}catch(e){cb(null);return;}let n=0,tr=0,L=0;for(let i=0;i<d.length;i+=4){if(d[i+3]<128){tr++;continue;}n++;L+=(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])/255;}
+  const tot=n+tr;if(!n||tr/tot<.12){cb("solid");return;}L/=n;cb(L<.42?"dark":L>.62?"light":"mixed");};im.onerror=()=>cb(null);im.src=url;}
+$("#sLogo").addEventListener("change",e=>readImg(e.target.files[0],[360,120],u=>logoTone(u,t=>update(()=>{cfg.logo=u;cfg.logoTone=t;},true)),"image/png"));
+$("#sLogoDel").addEventListener("click",()=>update(()=>{cfg.logo=null;cfg.logoTone=null;},true));
+$("#sPlate").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)update(()=>cfg.logoPlate=b.dataset.v,true);});
 $("#sPhotoUp").addEventListener("change",e=>readImg(e.target.files[0],[1400,1960],u=>update(()=>{cfg.custom=u;cfg.bg="photo";},true),"image/jpeg"));
 $("#sJump").addEventListener("click",e=>{const b=e.target.closest("[data-j]");if(!b)return;const id=b.dataset.j;closeAll(true);
   if(!state.email&&id!=="home")state.email="lea.martin@gmail.com";if(!state.phone)state.phone="612345678";
@@ -3271,14 +3288,41 @@ function appLink(){const f=fresh(),o={};
   const ft={};for(const k in cfg.features)if(cfg.features[k]!==f.features[k])ft[k]=cfg.features[k];if(Object.keys(ft).length)o.features=ft;
   o.flow=state.flow;o.lang=LANG;
   const base=/github\.io$/.test(location.hostname)?location.origin+location.pathname:APP_URL;
-  return base+"?c="+b64e(o);}
-function drawQR(cv,text,scale){const m=QRLib(text,"M"),n=m.length,q=4,s=scale||Math.max(3,Math.floor(232/(n+2*q)));cv.width=cv.height=(n+2*q)*s;
-  const x=cv.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,cv.width,cv.height);x.fillStyle="#000000";
+  return base+"?c="+b64e(o)+(LOGO_L.src===cfg.logo&&LOGO_L.v?"&l="+LOGO_L.v:"");}
+/* the logo travels in the link: re-encoded small (WebP when the browser supports it) so the QR stays scannable */
+const LOGO_L={src:null,v:null,h:0};
+const u8b64=a=>{let t="";for(let i=0;i<a.length;i+=8192)t+=String.fromCharCode.apply(null,a.subarray(i,i+8192));return btoa(t).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");};
+const b64u8=t=>{t=t.replace(/-/g,"+").replace(/_/g,"/");while(t.length%4)t+="=";const b=atob(t),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
+async function zip(a,mode){const cs=mode==="d"?new DecompressionStream("deflate-raw"):new CompressionStream("deflate-raw");const r=new Response(new Blob([a]).stream().pipeThrough(cs));return new Uint8Array(await r.arrayBuffer());}
+/* flat-colour logo codec: [w,h(2B each), n, n×RGB, alpha-level count] + 1 byte/pixel (0 = transparent, 1..n = colour, high bits = edge alpha) → deflate */
+async function encLogo(im,H,N){const w=Math.max(1,Math.min(Math.round(im.width*H/im.height),H*6)),h=Math.max(1,Math.round(w*im.height/im.width));
+  const cv=document.createElement("canvas");cv.width=w;cv.height=h;const x=cv.getContext("2d");x.drawImage(im,0,0,w,h);const d=x.getImageData(0,0,w,h).data;
+  const hist=new Map();for(let i=0;i<d.length;i+=4){if(d[i+3]<200)continue;const k=(d[i]>>4)<<8|(d[i+1]>>4)<<4|(d[i+2]>>4);hist.set(k,(hist.get(k)||0)+1);}
+  const top=[...hist.entries()].sort((a,b)=>b[1]-a[1]),pal=[];
+  for(const [k] of top){const c=[(k>>8&15)*17,(k>>4&15)*17,(k&15)*17];if(pal.every(p=>Math.abs(p[0]-c[0])+Math.abs(p[1]-c[1])+Math.abs(p[2]-c[2])>60))pal.push(c);if(pal.length>=N)break;}
+  if(!pal.length)pal.push([0,0,0]);
+  for(const p of pal){let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){if(d[i+3]<200)continue;let bi=0,bd=1e9;for(let j=0;j<pal.length;j++){const q=pal[j],e=(d[i]-q[0])**2+(d[i+1]-q[1])**2+(d[i+2]-q[2])**2;if(e<bd){bd=e;bi=j;}}if(pal[bi]===p){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}}if(n){p[0]=Math.round(r/n);p[1]=Math.round(g/n);p[2]=Math.round(b/n);}}
+  const out=new Uint8Array(6+pal.length*3+w*h);out[0]=w&255;out[1]=w>>8;out[2]=h&255;out[3]=h>>8;out[4]=pal.length;out[5]=4;pal.forEach((p,j)=>out.set(p,6+j*3));
+  let o=6+pal.length*3;for(let i=0;i<d.length;i+=4,o++){const a=d[i+3];if(a<40){out[o]=0;continue;}let bi=0,bd=1e9;for(let j=0;j<pal.length;j++){const q=pal[j],e=(d[i]-q[0])**2+(d[i+1]-q[1])**2+(d[i+2]-q[2])**2;if(e<bd){bd=e;bi=j;}}
+    const lvl=a>=215?0:a>=150?1:a>=95?2:3;out[o]=(bi+1)|(lvl<<5);}
+  return {v:"z."+u8b64(await zip(out)),h};}
+async function decLogo(t){const a=await zip(b64u8(t),"d"),w=a[0]|a[1]<<8,h=a[2]|a[3]<<8,n=a[4],pal=[];for(let j=0;j<n;j++)pal.push(a.subarray(6+j*3,9+j*3));
+  const cv=document.createElement("canvas");cv.width=w;cv.height=h;const x=cv.getContext("2d"),img=x.createImageData(w,h),A=[255,185,120,60];let o=6+n*3;
+  for(let i=0;i<w*h;i++,o++){const v=a[o];if(!v)continue;const c=pal[(v&31)-1];if(!c)continue;img.data.set([c[0],c[1],c[2],A[v>>5]],i*4);}
+  x.putImageData(img,0,0);return cv.toDataURL("image/png");}
+function packLogo(){return new Promise(res=>{if(!cfg.logo){LOGO_L.src=null;LOGO_L.v=null;res();return;}if(LOGO_L.src===cfg.logo){res();return;}
+  const src=cfg.logo,im=new Image();im.onload=async()=>{let best=null;const keep=c=>{if(!best||c.v.length<best.v.length||(c.v.length<=900&&c.h>best.h))best=c;};
+    try{if(window.CompressionStream)for(const [H,N] of [[96,6],[80,6],[72,5],[64,5],[56,4],[48,4],[40,3]]){const c=await encLogo(im,H,N);if(c.v.length<=900){best=c;break;}keep(c);}}catch(e){}
+    if(!best||best.v.length>900)for(const H of [64,48,40]){const cv=document.createElement("canvas");cv.height=H;cv.width=Math.max(1,Math.min(Math.round(im.width*H/im.height),H*6));cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+      const u=cv.toDataURL("image/webp",.5);if(!/^data:image\/webp/.test(u))break;const c={v:"w."+u.split(",")[1].replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""),h:H};keep(c);if(c.v.length<=900)break;}
+    LOGO_L.src=src;LOGO_L.v=best&&best.v.length<=1400?best.v:null;LOGO_L.h=best?best.h:0;res();};im.onerror=()=>{LOGO_L.src=src;LOGO_L.v=null;res();};im.src=src;});}
+function drawQR(cv,text,scale){const m=QRLib(text,text.length>500?"L":"M"),n=m.length,q=4,s=scale||Math.max(4,Math.floor(232/(n+2*q)));cv.width=cv.height=(n+2*q)*s;
+  const x=cv.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,cv.width,cv.height);x.fillStyle="#000000";cv.closest&&cv.closest(".s-qr")&&cv.closest(".s-qr").classList.toggle("dense",n>73);
   for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(m[r][c])x.fillRect((c+q)*s,(r+q)*s,s,s);return n;}
-function makeApp(quiet){const url=appLink();$("#sShare").hidden=false;$("#sLink").value=url;$("#sLinkOpen").href=url;
+async function makeApp(quiet){await packLogo();const url=appLink();$("#sShare").hidden=false;$("#sLink").value=url;$("#sLinkOpen").href=url;
   let n=0;try{n=drawQR($("#sQr"),url);}catch(e){$("#sShareNote").textContent="Lien trop long pour un QR code : raccourcissez les textes.";return;}
-  const lost=[cfg.logo?"le logo importé":null,photoUrl()?"la photo de fond":null].filter(Boolean);
-  $("#sShareNote").textContent=lost.length?`Non inclus dans le lien : ${lost.join(" et ")} (fichiers trop lourds pour un lien). L'app utilisera le nom du partenaire et le motif capsules.`:"";
+  const lost=[cfg.logo&&!LOGO_L.v?"le logo importé (trop détaillé)":null,photoUrl()?"la photo de fond (trop lourde)":null].filter(Boolean);
+  $("#sShareNote").textContent=(lost.length?`Non inclus dans le lien : ${lost.join(" et ")}. L'app utilisera ${lost.length===2?"le nom du partenaire et le motif capsules":lost[0].startsWith("le logo")?"le nom du partenaire":"le motif capsules"}. `:"")+(cfg.logo&&LOGO_L.v?`Logo inclus dans le lien (version allégée, ${LOGO_L.h} px de haut). `:"");
   $("#sShareMeta").textContent=`${url.length} caractères · QR ${n}×${n}. Le lien ouvre l'app sans le Studio (ajoutez &studio au lien pour l'afficher). Il pointe vers la version publiée sur GitHub Pages.`;
   if(!quiet){$("#sMake").innerHTML='<svg aria-hidden="true"><use href="#i-refresh"/></svg> Mettre à jour le lien et le QR code';$("#sShare").scrollIntoView({block:"nearest",behavior:"smooth"});}}
 $("#sMake").addEventListener("click",()=>makeApp());
@@ -3300,6 +3344,8 @@ function restart(){clearInterval(state.tid);clearInterval(rs);
 
 if(LINK){if(LINK.o.flow&&FLOWS[LINK.o.flow])state.flow=LINK.o.flow;if(!LINK.studio)document.querySelector(".stage").classList.add("app-only");}
 renderLangs();setCC(state.cc);apply();syncStudio();
+if(LINK&&LINK.lz)decLogo(LINK.lz).then(u=>{cfg.logo=u;apply();syncStudio();}).catch(()=>{});
+if(cfg.logo&&!cfg.logoTone)logoTone(cfg.logo,t=>{if(t){cfg.logoTone=t;apply();syncStudio();}});
 const h=(location.hash||"").slice(1);
 if(HASH_FLOW[h]){state.flow=HASH_FLOW[h];syncStudio();go("loading");}
 else if(BG[h]){if(h==="session")state.timer=FLOWS[state.flow].timer;if(h==="welcome")state.known={first:"Léa",days:12,email:"lea.martin@gmail.com"};state.email=state.email||"lea.martin@gmail.com";state.phone=state.phone||"612345678";go(h);}
