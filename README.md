@@ -13,3 +13,10 @@ Animateur : ajouter `?fac` à l'adresse (ex. `/proto-bry/?fac#standard`) pour af
 Tableau de bord (protégé par mot de passe) : https://blcs-bzh.github.io/proto-bry/dashboard.html
 
 Aucune donnée saisie n'est envoyée : n'entrez pas votre vraie carte bancaire.
+
+## Version 13 (nouvelle interface)
+
+- Prototype V13 : https://blcs-bzh.github.io/proto-bry/v13/
+- Chaque écran tient sur une seule page de téléphone, sans défilement.
+- Pendant la session, l'offre partenaire est un code exclusif à recevoir par email.
+- Studio (couleurs, logo, fonctionnalités) : bouton en bas à gauche sur mobile, panneau de gauche sur ordinateur.
