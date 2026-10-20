@@ -3282,6 +3282,7 @@ function makeApp(quiet){const url=appLink();$("#sShare").hidden=false;$("#sLink"
   $("#sShareMeta").textContent=`${url.length} caractères · QR ${n}×${n}. Le lien ouvre l'app sans le Studio (ajoutez &studio au lien pour l'afficher). Il pointe vers la version publiée sur GitHub Pages.`;
   if(!quiet){$("#sMake").innerHTML='<svg aria-hidden="true"><use href="#i-refresh"/></svg> Mettre à jour le lien et le QR code';$("#sShare").scrollIntoView({block:"nearest",behavior:"smooth"});}}
 $("#sMake").addEventListener("click",()=>makeApp());
+if(!/github\.io$/.test(location.hostname)){$("#sQrDl").hidden=true;$("#sQr").insertAdjacentHTML("afterend",'<small class="s-hint" style="display:block;text-align:center;margin-top:6px;line-height:1.3">Clic droit (ou appui long) sur le QR pour l\'enregistrer</small>');}
 $("#sLinkCopy").addEventListener("click",()=>{const t=$("#sLink"),b=$("#sLinkCopy"),ok=()=>{b.textContent="Lien copié ✓";setTimeout(()=>b.textContent="Copier le lien",1600);};
   try{navigator.clipboard.writeText(t.value).then(ok,()=>{t.select();document.execCommand&&document.execCommand("copy");ok();});}catch(x){t.select();ok();}});
 $("#sQrDl").addEventListener("click",()=>{const cv=document.createElement("canvas");drawQR(cv,$("#sLink").value,16);
