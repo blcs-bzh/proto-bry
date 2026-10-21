@@ -839,6 +839,19 @@ a.s-btn{text-decoration:none;color:inherit}
 .lr.me .av{color:var(--fg)}
 .tight .lb-pod .av,.lb.tight .lp .av{width:52px;height:52px;font-size:19px}
 @media (max-height:700px){.panel.lb{gap:12px}.lp .av{width:52px;height:52px;font-size:19px}.lp.first .av{width:64px;height:64px;font-size:24px}.lr{min-height:48px}.lb-list{gap:8px}}
+/* V13.10 · partner logo more prominent on every screen */
+.plogo img{max-height:min(17dvh,128px)}
+.plogo b{font-size:clamp(32px,5.4dvh,46px)}
+.top .plogo{max-width:92%}
+.plogo.sm b{font-size:clamp(21px,3.3dvh,28px);padding:10px 22px;border-radius:16px;border-width:2px}
+.plogo.sm img{max-height:min(9dvh,72px);max-width:100%}
+.tight .plogo.sm b{font-size:19px;padding:7px 18px}
+.tight .plogo.sm img{max-height:52px}
+@media (max-height:740px){.plogo.sm b{font-size:20px;padding:8px 18px}.plogo.sm img{max-height:56px}}
+@media (max-height:620px){.plogo.sm b{font-size:18px;padding:6px 16px}.plogo.sm img{max-height:44px}.plogo img{max-height:min(15dvh,96px)}}
+.logo-slot{overflow:visible;min-height:min-content}
+.logo-slot .plogo b{font-size:clamp(24px,4.6dvh,44px)}
+.logo-slot .plogo img{max-height:min(15dvh,128px)}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
@@ -923,7 +936,7 @@ a.s-btn{text-decoration:none;color:inherit}
         <div class="s-f"><label for="sTh" style="font-weight:600;font-size:12px">Texte du bouton</label><div class="s-color"><input type="color" id="sT" aria-label="Choisir la couleur du texte des boutons"><input class="s-in" id="sTh" maxlength="7" spellcheck="false"></div></div></div>
       <div class="s-btns" style="align-items:center"><span class="s-btnprev" id="sBtnPrev">Continuer →</span><button class="s-btn" id="sBtnAuto">Revenir à l'automatique</button></div>
       <p class="s-hint">Par défaut, les boutons suivent la couleur principale. Videz un champ pour revenir à l'automatique. Le contraste est vérifié ci-dessous (Bouton principal).</p></div>
-    <div class="s-f"><span class="s-l">Mode</span><div class="s-seg" id="sMode"><button data-v="light">Clair</button><button data-v="dark">Sombre</button></div></div>
+    <div class="s-f"><span class="s-l">Mode</span><p class="s-hint"><b id="sModeNow"></b> — le mode suit la couleur des batteries (section « Batteries de la station »). Le client ne peut pas le changer.</p></div>
     <div class="s-f"><label for="sGh">Couleur de fond</label><div class="s-color"><input type="color" id="sG" aria-label="Choisir la couleur de fond"><input class="s-in" id="sGh" maxlength="7" spellcheck="false"></div><div class="s-sw" id="sGsw"></div>
       <div class="s-btns" style="align-items:center"><button class="s-btn" id="sBgAuto">Fond automatique</button></div>
       <p class="s-hint" id="sBgHint">Par défaut, le fond est calculé à partir de la couleur principale et du mode. Une couleur choisie ici détermine le mode clair ou sombre de l'app.</p></div>
@@ -933,7 +946,7 @@ a.s-btn{text-decoration:none;color:inherit}
 
   <section class="s-sec"><h3>Batteries de la station</h3>
     <div class="s-f"><span class="s-l">Les batteries sont-elles noires ou blanches ?</span><div class="s-seg" id="sBatt"><button data-v="black">⬛ Noires</button><button data-v="white">⬜ Blanches</button></div>
-      <p class="s-hint">Noires : l'app passe en mode sombre. Blanches : mode clair. Les photos de batterie de l'app suivent la couleur choisie.</p></div>
+      <p class="s-hint">Batteries noires = mode sombre. Batteries blanches = mode clair. Le client ne peut pas changer le mode dans l'app. Les photos de batterie suivent la couleur choisie.</p></div>
   </section>
 
   <section class="s-sec"><h3>Partenaire</h3>
@@ -2741,8 +2754,10 @@ function action(c,bg,dark){let b=c;if(ctr(b,bg)<3)b=reach(b,bg,3.05,dark?"#fffff
   if(ctr("#ffffff",b)>=4.5)return[b,"#ffffff"];if(ctr(INK,b)>=4.5)return[b,INK];
   return dark?[reach(b,INK,4.5,"#ffffff"),INK]:[reach(b,"#ffffff",4.5,"#000000"),"#ffffff"];}
 function tokens(cfg){
-  const P=cfg.primary,S=cfg.secondary,cb=hexOk(cfg.bgc)?cfg.bgc.toLowerCase():null;
-  const dark=cb?ctr("#ffffff",cb)>=ctr(INK,cb):cfg.mode==="dark";
+  const P=cfg.primary,S=cfg.secondary;let cb=hexOk(cfg.bgc)?cfg.bgc.toLowerCase():null;
+  const dark=cfg.mode==="dark";let cbAdj=false;
+  /* the mode comes from the battery colour: a custom background is darkened / lightened to fit it */
+  if(cb){const fit=dark?reach(cb,"#ffffff",7,"#000000"):reach(cb,INK,7,"#ffffff");cbAdj=fit!==cb;cb=fit;}
   const bg=cb||(dark?mix("#0b0d0c",P,.07):mix("#ffffff",P,.05)),W=cb&&!dark?mix(cb,"#ffffff",.72):"#ffffff",L0=cb||"#ffffff";
   const t={bg,surface:dark?(cb?mix(cb,"#ffffff",.07):mix("#151918",P,.06)):W,surface2:dark?(cb?mix(cb,"#ffffff",.12):mix("#1f2422",P,.08)):(cb?mix(cb,"#000000",.05):mix("#ffffff",P,.08)),field:dark?(cb?mix(cb,"#ffffff",.04):mix("#111413",P,.05)):W,
     line:dark?"rgba(255,255,255,.12)":(cb?mix(cb,"#000000",.16):mix("#dde2df",P,.14)),fg:dark?"#f1f4f2":mix("#121615",P,.12)};
@@ -2772,7 +2787,7 @@ function tokens(cfg){
   t["wash-deep"]=`linear-gradient(180deg,${rgba(dA,.68)},${rgba(dB,.78)} 50%,${rgba(dC,.88)})`;
   Object.assign(t,{"w-fg":"#ffffff","w-muted":"rgba(255,255,255,.84)","w-surface":"rgba(255,255,255,.12)","w-surface2":"rgba(255,255,255,.1)","w-line":"rgba(255,255,255,.22)","w-field":"rgba(255,255,255,.1)",
     "w-primary":hexOk(cfg.btn)?t.primary:"#ffffff","w-on-primary":hexOk(cfg.btn)||hexOk(cfg.btnText)?t["on-primary"]:reach(dA,"#ffffff",4.5,"#000000"),"w-ptext":reach(mix(P,"#ffffff",.65),dB,4.5,"#ffffff"),"w-sheet":mix(P,"#000000",.62),"w-deep":dB,"hero-p":reach(P,dB,4.5,"#ffffff")});
-  t._dark=dark;t._cb=cb;
+  t._dark=dark;t._cb=cb;t._cbAdj=cbAdj;
   t._report=[["Texte",t.fg,bg,4.5],["Texte secondaire",t.muted,bg,4.5],["Bouton principal",t["on-primary"],t.primary,4.5],["Bouton sur le fond",t.primary,bg,3],["Accent",t.ptext,bg,4.5],["Offres",t["on-sec"],t.sec,4.5]];
   t._adj=[pAuto.toLowerCase()!==P.toLowerCase()?"principale":null,t.sec.toLowerCase()!==S.toLowerCase()?"secondaire":null].filter(Boolean);
   return t;}
@@ -2781,7 +2796,7 @@ function tokens(cfg){
 const OFFERS=[["-20 % sur votre 1er massage","#i-tag","Recevez votre code personnel par email. Valable 7 jours, à utiliser à l'accueil ou en ligne lors de votre inscription."]];
 const FEATURES=[["authMethod","Changer de méthode de vérification","WhatsApp, SMS ou email pour recevoir le code"],["knownUsers","Reconnaître les clients","Un client récent confirme son email, sans code"],
   ["optionalFields","Champs facultatifs du profil","Année de naissance, code postal (et DNI en Espagne)"],["countryPicker","Choix de l'indicatif pays","Numéros étrangers acceptés"],
-  ["langPicker","Choix de la langue","Bouton langue sur l'accueil"],["themeToggle","Bouton clair / sombre","Le client choisit son affichage"],
+  ["langPicker","Choix de la langue","Bouton langue sur l'accueil"],
   ["offers","Code promo partenaire","Code exclusif envoyé par email pendant la session"],["ranking","Classement","Position de la semaine"],
   ["stuck","Batterie bloquée","Nouvelle éjection après 2 essais"],["question","Question du jour","1,5 s après « Batterie rendue »"],["social","Réseaux sociaux du partenaire","Instagram, Facebook, TikTok, site web en fin de parcours"]];
 const allOn=()=>Object.fromEntries(FEATURES.map(f=>[f[0],true]));
@@ -2803,10 +2818,10 @@ function pillSVG(k,id){const tr_=k==="a"?"translate(150 160) rotate(-30.9)":"tra
 $("#pills").innerHTML=pillSVG("a","pgA")+pillSVG("b","pgB");
 $$(".scr .top").forEach(top=>{let r=top.querySelector(".top-r");if(!r){r=document.createElement("div");r.className="top-r";top.appendChild(r);}
   if(top.hasAttribute("data-lang")&&top.closest('[data-s="home"]')){const l=document.createElement("button");l.type="button";l.className="langb";l.dataset.feature="langPicker";l.dataset.noi18n="";l.setAttribute("aria-haspopup","dialog");l.addEventListener("click",()=>openOv("lang"));r.appendChild(l);}
-  if(top.closest('[data-s="chat"]'))return;
-  const b=document.createElement("button");b.type="button";b.className="tmode";b.dataset.feature="themeToggle";r.appendChild(b);b.addEventListener("click",()=>{cfg.mode=TK&&TK._dark?"light":"dark";cfg.bgc=null;apply();syncStudio();});});
+});
 const photoUrl=()=>cfg.bg==="photo"&&cfg.custom?cfg.custom:null;
 function apply(){
+  cfg.battery=cfg.battery==="white"?"white":cfg.battery==="black"?"black":(cfg.mode==="light"?"white":"black");cfg.mode=cfg.battery==="white"?"light":"dark";
   TK=tokens(cfg);const dark=TK._dark,ph=photoUrl();
   let tk=$("#tk");if(!tk){tk=document.createElement("style");tk.id="tk";document.body.appendChild(tk);}
   tk.textContent=".app{"+Object.entries(TK).filter(([k])=>k[0]!=="_").map(([k,v])=>`--${k}:${v}`).join(";")+"}";
@@ -2828,7 +2843,6 @@ function apply(){
   $$('[data-copy="mkLabel"]').forEach(e=>e.textContent=`Je souhaite recevoir les offres de ${cfg.name}`);
   $$('[data-copy="place"]').forEach(e=>e.textContent=cfg.place);
   $$("[data-feature]").forEach(el=>{el.hidden=!cfg.features[el.dataset.feature];});
-  if(TK._cb)$$(".tmode").forEach(b=>b.hidden=true);
   $("#ccBtn").disabled=!cfg.features.countryPicker;$("#ccBtn").querySelector("svg").style.display=cfg.features.countryPicker?"":"none";
   if(!cfg.features.countryPicker&&state.cc.dial!==(LANG==="es"?"34":"33"))setCC(CCBY[LANG==="es"?"34":"33"]);
   applyFlowUI();renderOffer();
@@ -3238,7 +3252,7 @@ $("#sFlows").innerHTML=Object.entries(FLOWS).map(([k,f])=>`<button class="s-flow
 $("#sJump").innerHTML=SCREENS.map(([id,l])=>`<button class="s-btn" data-j="${id}">${l}</button>`).join("");
 $("#sSheets").innerHTML=SHEETS.map(([id,l])=>`<button class="s-btn" data-sh="${id}">${l}</button>`).join("");
 $("#sErrs").innerHTML=Object.entries(ERRORS).map(([k,E])=>`<button class="s-err" data-e="${k}" aria-pressed="false">${E.label}<small>${E.when}</small></button>`).join("");
-$("#sPresets").innerHTML=Object.entries(PRESETS).map(([k,p])=>`<button class="s-preset" data-p="${k}"><span class="chips3"><i style="background:${p.mode==="dark"?"#0b0d0c":"#f6f6f4"}"></i><i style="background:${p.primary}"></i><i style="background:${p.secondary}"></i></span>${p.label}</button>`).join("");
+$("#sPresets").innerHTML=Object.entries(PRESETS).map(([k,p])=>`<button class="s-preset" data-p="${k}"><span class="chips3"><i style="background:${p.primary}"></i><i style="background:${p.secondary}"></i></span>${p.label}</button>`).join("");
 $("#sPsw").innerHTML=SWP.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Couleur ${c}" aria-pressed="false"></button>`).join("");
 $("#sGsw").innerHTML=SWG.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Fond ${c}" aria-pressed="false"></button>`).join("");
 $("#sSsw").innerHTML=SWS.map(c=>`<button data-c="${c}" style="background:${c}" aria-label="Couleur ${c}" aria-pressed="false"></button>`).join("");
@@ -3251,10 +3265,9 @@ function syncStudio(){
   $("#sP").value=cfg.primary;$("#sPh").value=cfg.primary;$("#sS").value=cfg.secondary;$("#sSh").value=cfg.secondary;
   $$("#sPsw button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cfg.primary.toLowerCase())));
   $$("#sSsw button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===cfg.secondary.toLowerCase())));
-  $$("#sMode button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===(TK._dark?"dark":"light"))));
-  $("#sG").value=TK.bg;$("#sGh").value=TK._cb||"";$("#sGh").placeholder="Auto · "+TK.bg;$("#sBgAuto").disabled=!TK._cb;
-  $$("#sGsw button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===TK._cb)));
-  $("#sBgHint").textContent=TK._cb?`Fond ${TK._cb} : mode ${TK._dark?"sombre":"clair"} appliqué automatiquement pour garder le texte lisible. Cliquez sur Clair ou Sombre pour revenir au fond automatique.`:"Par défaut, le fond est calculé à partir de la couleur principale et du mode. Une couleur choisie ici détermine le mode clair ou sombre de l'app.";
+  $("#sG").value=hexOk(cfg.bgc)?cfg.bgc:TK.bg;if(document.activeElement!==$("#sGh"))$("#sGh").value=hexOk(cfg.bgc)?cfg.bgc:"";$("#sGh").placeholder="Auto · "+TK.bg;$("#sModeNow").textContent=TK._dark?"Mode sombre · batteries noires":"Mode clair · batteries blanches";$("#sBgAuto").disabled=!TK._cb;
+  $$("#sGsw button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.c===(cfg.bgc||"").toLowerCase())));
+  $("#sBgHint").textContent=TK._cbAdj?`Couleur ${cfg.bgc} ${TK._dark?"assombrie":"éclaircie"} en ${TK._cb} pour rester en mode ${TK._dark?"sombre (batteries noires)":"clair (batteries blanches)"} et garder le texte lisible.`:"Par défaut, le fond est calculé à partir de la couleur principale. Le mode clair ou sombre suit la couleur des batteries.";
   $("#sB").value=hexOk(cfg.btn)?cfg.btn:TK.primary;$("#sBh").value=hexOk(cfg.btn)?cfg.btn:"";$("#sBh").placeholder="Auto · "+TK.primary;
   $("#sT").value=hexOk(cfg.btnText)?cfg.btnText:TK["on-primary"];$("#sTh").value=hexOk(cfg.btnText)?cfg.btnText:"";$("#sTh").placeholder="Auto · "+TK["on-primary"];
   $("#sBtnPrev").style.background=TK.primary;$("#sBtnPrev").style.color=TK["on-primary"];
@@ -3276,7 +3289,7 @@ $("#sDecline").addEventListener("change",e=>{state.decline=e.target.checked;});
 $("#sErrs").addEventListener("click",e=>{const b=e.target.closest("[data-e]");if(!b)return;const k=b.dataset.e;
   if($("#sErrNow").checked){state.armed=null;markErr();showError(k);closeStudio();return;}state.armed=state.armed===k?null:k;markErr();
   if(state.armed)toast(`Erreur programmée : ${ERRORS[k].when.toLowerCase()}`);});
-$("#sPresets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;const p=PRESETS[b.dataset.p];update(()=>{Object.assign(cfg,{primary:p.primary,secondary:p.secondary,mode:p.mode,preset:b.dataset.p,bgc:null});},true);});
+$("#sPresets").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;const p=PRESETS[b.dataset.p];update(()=>{Object.assign(cfg,{primary:p.primary,secondary:p.secondary,preset:b.dataset.p,bgc:null});},true);});
 $("#sName").addEventListener("input",e=>update(()=>cfg.name=e.target.value.trim()||"Partenaire",true));
 $("#sPlace").addEventListener("input",e=>update(()=>cfg.place=e.target.value.trim()||cfg.name,true));
 $("#sHead").addEventListener("input",e=>update(()=>cfg.headline=e.target.value||" ",true));
@@ -3285,12 +3298,11 @@ $("#sOffers").addEventListener("input",e=>{const i=+e.target.dataset.o;cfg.offer
 function colorIn(key,v){v=v.trim();if(v&&v[0]!=="#")v="#"+v;if(hexOk(v))update(()=>cfg[key]=v.toLowerCase());}
 ["P","S"].forEach(k=>{const key=k==="P"?"primary":"secondary";$("#s"+k).addEventListener("input",e=>colorIn(key,e.target.value));$("#s"+k+"h").addEventListener("change",e=>colorIn(key,e.target.value));$("#s"+k+"h").addEventListener("input",e=>{if(hexOk(e.target.value))colorIn(key,e.target.value);});
   $("#s"+k+"sw").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(b)colorIn(key,b.dataset.c);});});
-$("#sBatt").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)update(()=>{cfg.battery=b.dataset.v;cfg.mode=b.dataset.v==="black"?"dark":"light";cfg.bgc=null;},true);});
+$("#sBatt").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)update(()=>{cfg.battery=b.dataset.v;cfg.mode=b.dataset.v==="black"?"dark":"light";},true);});
 function btnIn(key,v){v=(v||"").trim();if(v&&v[0]!=="#")v="#"+v;if(!v||v==="#"){update(()=>cfg[key]=null,true);return;}if(hexOk(v))update(()=>cfg[key]=v.toLowerCase(),true);}
 $("#sB").addEventListener("input",e=>btnIn("btn",e.target.value));$("#sBh").addEventListener("change",e=>btnIn("btn",e.target.value));$("#sBh").addEventListener("input",e=>{if(hexOk(e.target.value))btnIn("btn",e.target.value);});
 $("#sT").addEventListener("input",e=>btnIn("btnText",e.target.value));$("#sTh").addEventListener("change",e=>btnIn("btnText",e.target.value));$("#sTh").addEventListener("input",e=>{if(hexOk(e.target.value))btnIn("btnText",e.target.value);});
 $("#sBtnAuto").addEventListener("click",()=>update(()=>{cfg.btn=null;cfg.btnText=null;},true));
-$("#sMode").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b)update(()=>{cfg.mode=b.dataset.v;cfg.bgc=null;},true);});
 $("#sG").addEventListener("input",e=>btnIn("bgc",e.target.value));$("#sGh").addEventListener("change",e=>btnIn("bgc",e.target.value));$("#sGh").addEventListener("input",e=>{if(hexOk(e.target.value))btnIn("bgc",e.target.value);});
 $("#sGsw").addEventListener("click",e=>{const b=e.target.closest("[data-c]");if(b)btnIn("bgc",b.dataset.c);});
 $("#sBgAuto").addEventListener("click",()=>update(()=>cfg.bgc=null,true));
