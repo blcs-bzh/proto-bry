@@ -6,7 +6,7 @@
   "use strict";
   /* Paste the Apps Script web-app URL here (ends with /exec). Empty = tracking off. */
   var ENDPOINT = "https://script.google.com/macros/s/AKfycbyYaJxbEGoShREW0DxtcyExvWkQCQD1E84VVPbMrkGWwFI-5m9GDG_9hFIFjn7ItZm6/exec";
-  var VERSION = "v13-t2";
+  var VERSION = "v13-t3";
 
   var Q = new URLSearchParams(location.search);
   if (!ENDPOINT || Q.has("notrack")) return;
@@ -58,7 +58,8 @@
       homeAt: null, batteryAt: null,
       profile_status: "not_reached", birth_year_filled: "", postcode_filled: "", dni_filled: "",
       rating: "", reasons: [], comment: "", rating_sent: false,
-      question: "", qPick: null, end_clicks: [], google: "", help: []
+      question: "", qPick: null, end_clicks: [], google: "", help: [],
+      pops: {}             /* popup id -> {n: times opened, ms: time open, at: open since} */
     };
   }
 
@@ -69,8 +70,25 @@
     curAt = now;
   }
 
+  /* Popups (offer code, ranking, return steps, help...): count each opening and time it while visible */
+  function popTick(id) {
+    var p = S && S.pops[id];
+    if (!p || !p.at) return;
+    var now = Date.now();
+    if (document.visibilityState !== "hidden") p.ms += now - p.at;
+    p.at = now;
+  }
+  function popsTickAll() { if (S) Object.keys(S.pops).forEach(popTick); }
+  function onPopup(ov) {
+    if (!S) return;
+    var id = ov.id.replace(/^ov-/, ""), open = !ov.hidden;
+    var p = S.pops[id] || (S.pops[id] = { n: 0, ms: 0, at: 0 });
+    if (open && !p.at) { p.n++; p.at = Date.now(); send(); }
+    else if (!open && p.at) { popTick(id); p.at = 0; send(); }
+  }
+
   function row() {
-    tick();
+    tick(); popsTickAll();
     var s = st(), now = Date.now();
     var secs = function (ms) { return ms == null ? "" : Math.round(ms / 100) / 10; };
     var times = {};
@@ -106,6 +124,10 @@
       end_clicks: S.end_clicks.join(", "),
       google_review: S.google,
       help_actions: S.help.join(", "),
+      popups_opened: Object.keys(S.pops).filter(function (k) { return S.pops[k].n; })
+        .map(function (k) { return k + " x" + S.pops[k].n; }).join(", "),
+      popup_times: JSON.stringify(Object.keys(S.pops).reduce(function (o, k) {
+        if (S.pops[k].n) o[k] = Math.round(S.pops[k].ms / 100) / 10; return o; }, {})),
       version: VERSION
     };
   }
@@ -202,8 +224,8 @@
   }, true);
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "hidden") { tick(); send(true); }
-    else curAt = Date.now();
+    if (document.visibilityState === "hidden") { tick(); popsTickAll(); send(true); }
+    else { curAt = Date.now(); if (S) Object.keys(S.pops).forEach(function (k) { if (S.pops[k].at) S.pops[k].at = Date.now(); }); }
   });
   window.addEventListener("pagehide", function () { send(true); });
 
@@ -214,6 +236,9 @@
     onScreen(app.dataset.screen);
     new MutationObserver(function () { onScreen(app.dataset.screen); })
       .observe(app, { attributes: true, attributeFilter: ["data-screen"] });
+    $$(".ov[id^='ov-']").forEach(function (ov) {
+      new MutationObserver(function () { onPopup(ov); }).observe(ov, { attributes: true, attributeFilter: ["hidden"] });
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
