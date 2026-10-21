@@ -5,7 +5,7 @@
 (function () {
   "use strict";
   /* Paste the Apps Script web-app URL here (ends with /exec). Empty = tracking off. */
-  var ENDPOINT = "";
+  var ENDPOINT = "https://script.google.com/macros/s/AKfycbyYaJxbEGoShREW0DxtcyExvWkQCQD1E84VVPbMrkGWwFI-5m9GDG_9hFIFjn7ItZm6/exec";
   var VERSION = "v13-t1";
 
   var Q = new URLSearchParams(location.search);
