@@ -20,3 +20,9 @@ Aucune donnée saisie n'est envoyée : n'entrez pas votre vraie carte bancaire.
 - Chaque écran tient sur une seule page de téléphone, sans défilement.
 - Pendant la session, l'offre partenaire est un code exclusif à recevoir par email.
 - Studio (couleurs, logo, fonctionnalités) : bouton en bas à gauche sur mobile, panneau de gauche sur ordinateur.
+
+## Suivi des tests V13
+
+- `v13/tracker.js` enregistre une ligne par session de test (anonyme : aucun nom, téléphone ni email) dans la Google Sheet « Plug'Heur V13 – Résultats des tests ».
+- Activation : coller l'URL du déploiement Apps Script (`tracking/apps-script.gs`) dans `ENDPOINT` en haut de `v13/tracker.js`.
+- Désactiver sur un appareil (animateur) : ajouter `?notrack` à l'adresse.
