@@ -6,7 +6,7 @@
   "use strict";
   /* Paste the Apps Script web-app URL here (ends with /exec). Empty = tracking off. */
   var ENDPOINT = "https://script.google.com/macros/s/AKfycbyYaJxbEGoShREW0DxtcyExvWkQCQD1E84VVPbMrkGWwFI-5m9GDG_9hFIFjn7ItZm6/exec";
-  var VERSION = "v13-t1";
+  var VERSION = "v13-t2";
 
   var Q = new URLSearchParams(location.search);
   if (!ENDPOINT || Q.has("notrack")) return;
@@ -58,7 +58,7 @@
       homeAt: null, batteryAt: null,
       profile_status: "not_reached", birth_year_filled: "", postcode_filled: "", dni_filled: "",
       rating: "", reasons: [], comment: "", rating_sent: false,
-      question: "", end_clicks: [], google: "", help: []
+      question: "", qPick: null, end_clicks: [], google: "", help: []
     };
   }
 
@@ -174,9 +174,20 @@
       }, 60);
       return;
     }
+    /* Question du jour: remember the exact answer tapped, then save it on "Envoyer" */
+    if (el.classList.contains("answer")) {
+      var list = $$("#ov-question .answer"), i = list.indexOf(el);
+      if (i >= 0) S.qPick = { key: ANSWERS[i] || ("answer_" + (i + 1)), label: el.textContent.replace(/\s+/g, " ").trim() };
+      return;
+    }
     if (id === "qSend") {
-      var a = $$(".answer").map(function (x) { return x.getAttribute("aria-checked") === "true"; }).indexOf(true);
-      if (a >= 0) { S.question = ANSWERS[a] || ""; send(true); }
+      var pick = S.qPick;
+      if (!pick) {                           /* fallback: the answer the app shows as selected */
+        var opts = $$("#ov-question .answer"), j = -1;
+        opts.forEach(function (x, k) { if (x.getAttribute("aria-checked") === "true") j = k; });
+        if (j >= 0) pick = { key: ANSWERS[j] || ("answer_" + (j + 1)), label: opts[j].textContent.replace(/\s+/g, " ").trim() };
+      }
+      if (pick) { S.question = pick.key + " (" + pick.label + ")"; S.qPick = null; send(true); }
       return;
     }
     if (el.dataset && el.dataset.soc) { S.end_clicks.push(el.dataset.soc); send(true); return; }
