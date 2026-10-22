@@ -923,6 +923,8 @@ a.s-btn{text-decoration:none;color:inherit}
 .phsteps div{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:16px;background:color-mix(in srgb,var(--fg) 6%,transparent);font-size:14px;font-weight:600;line-height:1.35}
 .phsteps b{font-family:var(--font-display);font-weight:800;font-size:46px;line-height:.9;color:var(--ptext);width:30px;text-align:center;flex:none}
 @media (prefers-reduced-motion:reduce){.ph-vf *{animation:none!important}}
+/* V13.14 viewfinder is always dark: use the bright brand colour inside it */
+.ph-vf>*{--ptext:var(--hero-p,var(--primary))}
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
