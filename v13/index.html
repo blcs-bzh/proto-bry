@@ -2919,8 +2919,9 @@ const FEATURES=[["authMethod","Changer de méthode de vérification","WhatsApp, 
   ["optionalFields","Champs facultatifs du profil","Année de naissance, code postal (et DNI en Espagne)"],["countryPicker","Choix de l'indicatif pays","Numéros étrangers acceptés"],
   ["langPicker","Choix de la langue","Bouton langue sur l'accueil"],
   ["offers","Code promo partenaire","Code exclusif envoyé par email pendant la session"],["ranking","Classement","Position de la semaine"],
-  ["stuck","Batterie bloquée","Nouvelle éjection après 2 essais"],["question","Question du jour","1,5 s après « Batterie rendue »"],["social","Réseaux sociaux du partenaire","Instagram, Facebook, TikTok, site web en fin de parcours"],["photo","Photo de la station au retour","Le client photographie la station pour clôturer la location"]];
-const allOn=()=>Object.fromEntries(FEATURES.map(f=>[f[0],true]));
+  ["stuck","Batterie bloquée","Nouvelle éjection après 2 essais"],["question","Question du jour","1,5 s après « Batterie rendue »"],["social","Réseaux sociaux du partenaire","Instagram, Facebook, TikTok, site web en fin de parcours"],["photoReq","Photo de la station au retour","Désactivé par défaut · le client photographie la station pour clôturer la location"]];
+const OFF_DEFAULT=["photoReq"];
+const allOn=()=>Object.fromEntries(FEATURES.map(f=>[f[0],!OFF_DEFAULT.includes(f[0])]));
 const PRESETS={
   plugheur:{label:"Plug'Heur",primary:"#32f2b5",secondary:"#a48bff",mode:"dark"},
   energie:{label:"Énergie",primary:"#e30613",secondary:"#111111",mode:"light"},
@@ -3319,7 +3320,7 @@ $("#erActions").addEventListener("click",e=>{const b=e.target.closest("button");
   else if(a==="retry"){b.disabled=true;txt(b,"Vérification…");later(()=>{if(state.swapErr){state.swapErr=false;go("swapeject");}else finishReturn();},1200);}});
 
 /* =================== station photo =================== */
-function finishReturn(){if(cfg.features.photo){go("photo");return;}clearInterval(state.tid);state.tid=null;go("done");}
+function finishReturn(){if(cfg.features.photoReq){go("photo");return;}clearInterval(state.tid);state.tid=null;go("done");}
 const PH={aim:["Photo requise","Prenez une photo de face de la station.","Alignez la station avec le guide","Prendre la photo"],
   flash:["Photo requise","Prenez une photo de face de la station.","Alignez la station avec le guide","Prendre la photo"],
   analyse:["Analyse de la photo","Gardez l'application ouverte, quelques secondes…","Analyse en cours…","Analyse…"],
