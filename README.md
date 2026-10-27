@@ -20,6 +20,7 @@ Aucune donnée saisie n'est envoyée : n'entrez pas votre vraie carte bancaire.
 - Chaque écran tient sur une seule page de téléphone, sans défilement.
 - Pendant la session, l'offre partenaire est un code exclusif à recevoir par email.
 - Studio (couleurs, logo, fonctionnalités) : bouton en bas à gauche sur mobile, panneau de gauche sur ordinateur.
+- Titres et boutons en Neue Haas Display (Roman et Medium, intégrés à la page) ; texte courant en Plus Jakarta Sans.
 
 ## Suivi des tests V13
 
